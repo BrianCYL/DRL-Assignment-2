@@ -237,23 +237,38 @@ class Game2048Env(gym.Env):
         # If the simulated board is different from the current board, the move is legal
         return not np.array_equal(self.board, temp_board)
 
+def select_action(env, approximator, legal_moves, prev_score):
+    max_value = -float("inf")
+    for action in legal_moves:
+        sim_env = copy.deepcopy(env)
+        next_state, score, done, _ = sim_env.step(action)
+        value = (score - prev_score) + approximator.value(next_state)
+        if value > max_value:
+            max_value = value
+            best_action = action
+    return best_action
+
 patterns = [[(1,0), (2,0), (3,0), (1,1), (2,1), (3,1)],
             [(1,1), (2,1), (3,1), (1,2), (2,2), (3,2)],
             [(0,0), (1,0), (2,0), (3,0), (2,1), (3,1)],
             [(1,0), (1,1), (1,2), (1,3), (2,2), (3,2)]]
 
-agent = NTupleApproximator(4, patterns)
+approximator = NTupleApproximator(4, patterns)
 with open("value_approximator.pkl", "rb") as f:
-    agent = pickle.load(f)
+    approximator = pickle.load(f)
 
 def get_action(state, score):
-    
-    env = Game2048Env()
-    state = torch.tensor(state, dtype=torch.float32).flatten()
-    action = agent.select_action(state)
-    while not env.is_move_legal(action):
-        action = agent.select_action(state)
-    return action
+    for action in range(4):
+        sim_env = copy.deepcopy(env)
+        if not sim_env.is_move_legal(action):
+            continue
+        next_state, new_score, done, _ = sim_env.step(action)
+        value = (new_score - score) + approximator.value(next_state)
+        if value > max_value:
+            max_value = value
+            best_action = action
+
+    return best_action
     
     # You can submit this random agent to evaluate the performance of a purely random strategy.
 

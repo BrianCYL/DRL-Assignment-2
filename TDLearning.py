@@ -6,6 +6,7 @@ from student_agent import Game2048Env
 import os
 from tqdm import tqdm
 import pickle
+from utils import NTupleApproximator
 
 def select_action(env, approximator, legal_moves, prev_score):
     max_value = -float("inf")
