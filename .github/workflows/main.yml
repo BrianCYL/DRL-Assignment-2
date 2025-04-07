@@ -33,8 +33,8 @@ jobs:
 
     - name: 4. Download the model
       run: |
-        gdown https://drive.google.com/uc?id=1wO6oSX1O1BinDDVzoyvc3XW8nDUiIi5E -O value_approximator.pkl
-        
+        gdown https://drive.google.com/uc?id=1Kk27y1s3HYiEKiT1nqxNPMnLd28pAhv3 -O value_weights.json
+
     - name: 5. Run Evaluation
       run: 
         python eval.py --token a91aae52cff9ef65932db06b150ffd47

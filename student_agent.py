@@ -7,11 +7,10 @@ from gym import spaces
 import matplotlib.pyplot as plt
 import copy
 import random
-import math
-import torch
-import os
 import pickle
 from utils import NTupleApproximator
+from collections import defaultdict
+import json
 
 class Game2048Env(gym.Env):
     def __init__(self):
@@ -254,8 +253,21 @@ patterns = [[(1,0), (2,0), (3,0), (1,1), (2,1), (3,1)],
             [(1,0), (1,1), (1,2), (1,3), (2,2), (3,2)]]
 
 approximator = NTupleApproximator(4, patterns)
-with open("value_approximator.pkl", "rb") as f:
-    approximator = pickle.load(f)
+# with open("value_approximator.pkl", "rb") as f:
+#     approximator = pickle.load(f)
+with open("value_weights.json", "r") as f:
+    raw_weights = json.load(f)
+
+# Convert back to list of defaultdicts
+weights = []
+for i, w in enumerate(raw_weights):
+    # print(f"Pattern {i}")
+    d = defaultdict(float)
+    for k, v in w.items():
+        key = eval(k) if k.startswith("(") else k  # if key was a tuple
+        d[key] = float(v)
+    approximator.weights[i] = d
+
 
 def get_action(state, score):
     for action in range(4):
