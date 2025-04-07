@@ -271,11 +271,7 @@ for i, w in enumerate(raw_weights):
 
 def get_action(state, score):
     for action in range(4):
-        sim_env = copy.deepcopy(env)
-        if not sim_env.is_move_legal(action):
-            continue
-        next_state, new_score, done, _ = sim_env.step(action)
-        value = (new_score - score) + approximator.value(next_state)
+        value = approximator.value(state)
         if value > max_value:
             max_value = value
             best_action = action
