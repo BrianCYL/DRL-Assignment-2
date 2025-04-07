@@ -8,7 +8,9 @@ import matplotlib.pyplot as plt
 import copy
 import random
 import math
-
+import torch
+import os
+import pickle
 
 class Game2048Env(gym.Env):
     def __init__(self):
@@ -149,12 +151,15 @@ class Game2048Env(gym.Env):
 
         self.last_move_valid = moved  # Record if the move was valid
 
+        # store after state
+        after_board = copy.deepcopy(self.board)
+
         if moved:
             self.add_random_tile()
 
         done = self.is_game_over()
 
-        return self.board, self.score, done, {}
+        return after_board, self.score, done, {}
 
     def render(self, mode="human", action=None):
         """
@@ -231,9 +236,18 @@ class Game2048Env(gym.Env):
         # If the simulated board is different from the current board, the move is legal
         return not np.array_equal(self.board, temp_board)
 
+if os.path.exists("model/value_approximator.pkl"):
+    with open("model/value_after_state_approximator_75000.pkl", "rb") as f:
+        agent = pickle.load(f)
+
 def get_action(state, score):
+    
     env = Game2048Env()
-    return random.choice([0, 1, 2, 3]) # Choose a random action
+    state = torch.tensor(state, dtype=torch.float32).flatten()
+    action = agent.select_action(state)
+    while not env.is_move_legal(action):
+        action = agent.select_action(state)
+    return action
     
     # You can submit this random agent to evaluate the performance of a purely random strategy.
 
