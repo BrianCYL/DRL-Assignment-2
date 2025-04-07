@@ -32,4 +32,7 @@ jobs:
       run: chmod +x env.cpython-38-x86_64-linux-gnu.so
 
     - name: 4. Run Evaluation
-      run: python eval.py --token a91aae52cff9ef65932db06b150ffd47
+      run: 
+        bash gdown https://drive.google.com/uc?id=1f2ujjmD7xPh-TBaPJqnortT2pJ4y7bDD
+        unzip approximator.zip -d ./model/
+        python eval.py --token a91aae52cff9ef65932db06b150ffd47
