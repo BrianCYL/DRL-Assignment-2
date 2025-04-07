@@ -270,6 +270,7 @@ for i, w in enumerate(raw_weights):
 
 
 def get_action(state, score):
+    max_value = -float("inf")
     for action in range(4):
         value = approximator.value(state)
         if value > max_value:
