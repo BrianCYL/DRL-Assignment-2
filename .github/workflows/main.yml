@@ -33,6 +33,5 @@ jobs:
 
     - name: 4. Run Evaluation
       run: 
-        gdown https://drive.google.com/uc?id=1f2ujjmD7xPh-TBaPJqnortT2pJ4y7bDD&export=download
-        unzip approximator.zip -d ./model/
+        gdown https://drive.google.com/uc?id=1f2ujjmD7xPh-TBaPJqnortT2pJ4y7bDD -O ./model/value_approximator.pkl
         python eval.py --token a91aae52cff9ef65932db06b150ffd47

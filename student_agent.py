@@ -236,7 +236,7 @@ class Game2048Env(gym.Env):
         # If the simulated board is different from the current board, the move is legal
         return not np.array_equal(self.board, temp_board)
 
-with open("model/value_after_state_approximator_75000.pkl", "rb") as f:
+with open("model/value_approximator.pkl", "rb") as f:
     agent = pickle.load(f)
 
 def get_action(state, score):
