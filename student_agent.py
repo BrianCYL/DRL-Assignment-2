@@ -11,6 +11,7 @@ import math
 import torch
 import os
 import pickle
+from utils import NTupleApproximator
 
 class Game2048Env(gym.Env):
     def __init__(self):
@@ -236,6 +237,12 @@ class Game2048Env(gym.Env):
         # If the simulated board is different from the current board, the move is legal
         return not np.array_equal(self.board, temp_board)
 
+patterns = [[(1,0), (2,0), (3,0), (1,1), (2,1), (3,1)],
+            [(1,1), (2,1), (3,1), (1,2), (2,2), (3,2)],
+            [(0,0), (1,0), (2,0), (3,0), (2,1), (3,1)],
+            [(1,0), (1,1), (1,2), (1,3), (2,2), (3,2)]]
+
+agent = NTupleApproximator(4, patterns)
 with open("value_approximator.pkl", "rb") as f:
     agent = pickle.load(f)
 
