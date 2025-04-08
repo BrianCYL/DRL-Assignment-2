@@ -8,9 +8,10 @@ import matplotlib.pyplot as plt
 import copy
 import random
 import pickle
-from utils import NTupleApproximator
+from utils import NTupleApproximator, TD_MCTS, TD_MCTS_Node
+# from utils import NTupleApproximator
 from collections import defaultdict
-import json
+import gc
 
 class Game2048Env(gym.Env):
     def __init__(self):
@@ -159,7 +160,7 @@ class Game2048Env(gym.Env):
 
         done = self.is_game_over()
 
-        return after_board, self.score, done, {}
+        return self.board, self.score, done, {}, after_board
 
     def render(self, mode="human", action=None):
         """
@@ -240,8 +241,8 @@ def select_action(env, approximator, legal_moves, prev_score):
     max_value = -float("inf")
     for action in legal_moves:
         sim_env = copy.deepcopy(env)
-        next_state, score, done, _ = sim_env.step(action)
-        value = (score - prev_score) + approximator.value(next_state)
+        next_state, score, done, _, after_state = sim_env.step(action)
+        value = (score - prev_score) + approximator.value(after_state)
         if value > max_value:
             max_value = value
             best_action = action
@@ -253,32 +254,115 @@ patterns = [[(1,0), (2,0), (3,0), (1,1), (2,1), (3,1)],
             [(1,0), (1,1), (1,2), (1,3), (2,2), (3,2)]]
 
 approximator = NTupleApproximator(4, patterns)
-# with open("value_approximator.pkl", "rb") as f:
-#     approximator = pickle.load(f)
-with open("value_weights.json", "r") as f:
-    raw_weights = json.load(f)
-
-# Convert back to list of defaultdicts
-weights = []
-for i, w in enumerate(raw_weights):
-    # print(f"Pattern {i}")
-    d = defaultdict(float)
-    for k, v in w.items():
-        key = eval(k) if k.startswith("(") else k  # if key was a tuple
-        d[key] = float(v)
-    approximator.weights[i] = d
-
+with open("value_approximator.pkl", "rb") as f:
+    approximator = pickle.load(f)
 
 def get_action(state, score):
-    max_value = -float("inf")
+    # sim_env = Game2048Env()
+    # sim_env.board = copy.deepcopy(state)
+    # sim_env.score = score
+    # legal_moves = [a for a in range(4) if sim_env.is_move_legal(a)]
+    # if not legal_moves:
+    #     # print("No legal moves available. Random action selected.")
+    #     return np.random.choice([0, 1, 2, 3])
+    # best_action = select_action(sim_env, approximator, legal_moves, score)
+    # return best_action
+    # You can submit this random agent to evaluate the performance of a purely random strategy.
+    best_value = -float('inf')
+    best_action = None
+    copy_state = copy.deepcopy(state)
     for action in range(4):
-        value = approximator.value(state)
-        if value > max_value:
-            max_value = value
+        # Step 1: Create a dummy environment with the given state and score
+        sim_env = Game2048Env()
+        sim_env.board = copy_state.copy()
+        sim_env.score = score
+
+        # Step 2: Simulate the action
+        if not sim_env.is_move_legal(action):
+            continue  # Skip illegal moves
+
+        next_state, new_score, done, _, after_state = sim_env.step(action)
+        reward = new_score - score
+        value = reward + approximator.value(after_state)
+
+        if value > best_value:
+            best_value = value
             best_action = action
 
     return best_action
+
+# def main():
+#     patterns = [[(1,0), (2,0), (3,0), (1,1), (2,1), (3,1)],
+#                 [(1,1), (2,1), (3,1), (1,2), (2,2), (3,2)],
+#                 [(0,0), (1,0), (2,0), (3,0), (2,1), (3,1)],
+#                 [(1,0), (1,1), (1,2), (1,3), (2,2), (3,2)]]
+
+#     approximator = NTupleApproximator(4, patterns)
+
+#     with open("value_approximator.pkl", "rb") as f:
+#         print("Loading value approximator from file...")
+#         approximator = pickle.load(f)
+#     # print(approximator.symmetry_patterns)
+#     print("Starting game...")
+#     env = Game2048Env()
     
-    # You can submit this random agent to evaluate the performance of a purely random strategy.
+#     td_mcts = TD_MCTS(env, approximator, rollout_depth=3, iterations=100)
+
+#     state = env.reset()
+#     done = False
+#     while not done:
+#         root = TD_MCTS_Node(env, state, env.score)  # Initialize the root node for MCTS
+
+#         # Run multiple simulations to construct and refine the search tree
+#         for _ in range(td_mcts.iterations):
+#             td_mcts.run_simulation(root)
+
+#         # Select the best action based on the visit distribution of the root's children
+#         best_action, visit_distribution = td_mcts.best_action_distribution(root)
+#         # legal_moves = [action for action in range(env.action_space.n) if env.is_move_legal(action)]
+#         # best_action = select_action(env, approximator, legal_moves, prev_score)
+#         print("MCTS selected action:", best_action, "with visit distribution:", visit_distribution)
+#         state, prev_score, done, _ = env.step(best_action)
+#         print("Action taken:", best_action, " | Score:", env.score)
+#         print("Current board state:\n", env.board)
+
+        
+#     print("Game Over! Final Score:", env.score)
+
+# if __name__ == "__main__":
+#     main()
 
 
+# def main():
+#     patterns = [[(1,0), (2,0), (3,0), (1,1), (2,1), (3,1)],
+#                 [(1,1), (2,1), (3,1), (1,2), (2,2), (3,2)],
+#                 [(0,0), (1,0), (2,0), (3,0), (2,1), (3,1)],
+#                 [(1,0), (1,1), (1,2), (1,3), (2,2), (3,2)]]
+#     global approximator
+#     # if approximator is None:
+#     #     gc.collect() 
+#     approximator = NTupleApproximator(board_size=4, patterns=patterns)
+#     with open("value_approximator.pkl", "rb") as f:
+#         approximator = pickle.load(f)
+#     print("Starting game...")
+#     # for _ in range(10):
+#     env = Game2048Env()
+#     state = env.reset()
+#     done = False
+#     prev_score = env.score
+#     while not done:
+#         # action = get_action(state, env.score)
+#         # legal_moves = [a for a in range(4) if env.is_move_legal(a)]
+#         # action = select_action(env, approximator, legal_moves, prev_score)
+#         action = get_action(state, prev_score)
+#         # print(action, action_1)
+#         state, score, done, _, _ = env.step(action)
+#         # print("Action taken:", action, " | Score:", score)
+#         # print("Current board state:\n", env.board)
+#         prev_score = score
+    
+#     print("Game Over! Final Score:", env.score)
+#     #     total_score += env.score
+#     # print("Average score:", total_score / 10)
+# if __name__ == "__main__":
+#     main()
