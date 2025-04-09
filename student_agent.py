@@ -8,8 +8,8 @@ import matplotlib.pyplot as plt
 import copy
 import random
 import pickle
+from utils import NTupleApproximator, TD_MCTS, DecisionNode
 # from utils import NTupleApproximator, TD_MCTS, DecisionNode
-from utils import NTupleApproximator, MCTS
 # from utils import NTupleApproximator
 from collections import defaultdict
 import gc
@@ -180,8 +180,11 @@ class Game2048Env(gym.Env):
 
         self.last_move_valid = moved  # Record if the move was valid
 
+        self.after_state = copy.deepcopy(self.board)
         if moved and spawn_tile:
             self.add_random_tile()
+
+
 
         done = self.is_game_over()
 
@@ -285,36 +288,6 @@ with open("value_approximator.pkl", "rb") as f:
     approximator = pickle.load(f)
 
 def get_action(state, score):
-    # sim_env = Game2048Env()
-    # sim_env.board = copy.deepcopy(state)
-    # sim_env.score = score
-    # legal_moves = [a for a in range(4) if sim_env.is_move_legal(a)]
-    # if not legal_moves:
-    #     # print("No legal moves available. Random action selected.")
-    #     return np.random.choice([0, 1, 2, 3])
-    # best_action = select_action(sim_env, approximator, legal_moves, score)
-    # return best_action
-    # You can submit this random agent to evaluate the performance of a purely random strategy.
-    # best_value = -float('inf')
-    # best_action = None
-    # copy_state = copy.deepcopy(state)
-    # for action in range(4):
-    #     # Step 1: Create a dummy environment with the given state and score
-    #     sim_env = Game2048Env()
-    #     sim_env.board = copy_state.copy()
-    #     sim_env.score = score
-
-    #     # Step 2: Simulate the action
-    #     if not sim_env.is_move_legal(action):
-    #         continue  # Skip illegal moves
-
-    #     next_state, new_score, done, _, after_state = sim_env.step(action)
-    #     reward = new_score - score
-    #     value = reward + approximator.value(after_state)
-
-    #     if value > best_value:
-    #         best_value = value
-    #         best_action = action
 
     env = Game2048Env()
     env.board = copy.deepcopy(state)
@@ -323,8 +296,13 @@ def get_action(state, score):
     legal_moves = [a for a in range(4) if env.is_move_legal(a)]
     if not legal_moves: return random.choice([0, 1, 2, 3])
     
-    mcts_solver = MCTS(env, approximator, iterations=1000, value_norm=20000)
-    best_action = mcts_solver.search()
+    td_mcts = TD_MCTS(env, approximator, iterations=1000, exploration_constant=np.sqrt(2))
+    root = DecisionNode(env, copy.deepcopy(state), env.score)
+
+    # Run multiple simulations to construct and refine the search tree
+    for _ in range(td_mcts.iterations):
+        td_mcts.run_simulation(root)
+    best_action, _ = td_mcts.best_action_distribution(root)
 
     return best_action
 
@@ -336,7 +314,7 @@ def main():
 
     approximator = NTupleApproximator(4, patterns)
 
-    with open("value_approximator.pkl", "rb") as f:
+    with open("model/value_after_state_approximator_75000.pkl", "rb") as f:
         print("Loading value approximator from file...")
         approximator = pickle.load(f)
     # print(approximator.symmetry_patterns)
@@ -344,27 +322,19 @@ def main():
     env = Game2048Env()
     
     # td_mcts = TD_MCTS(env, approximator, rollout_depth=3, iterations=100)
-
+    td_mcts = TD_MCTS(env, approximator, iterations=1000, exploration_constant=np.sqrt(2))
     state = env.reset()
     done = False
     while not done:
-        # root = DecisionNode(env, copy.deepcopy(state), env.score)
+        root = DecisionNode(env, copy.deepcopy(state), env.score)
 
-        # # Run multiple simulations to construct and refine the search tree
-        # for _ in range(td_mcts.iterations):
-        #     td_mcts.run_simulation(root)
+        # Run multiple simulations to construct and refine the search tree
+        for _ in range(td_mcts.iterations):
+            td_mcts.run_simulation(root)
 
-        # # Select the best action based on the visit distribution of the root's children
-        # best_action, visit_distribution = td_mcts.best_action_distribution(root)
-        legal_moves = [a for a in range(4) if env.is_move_legal(a)]
-        if not legal_moves: return random.choice([0, 1, 2, 3])
-        
-        mcts_solver = MCTS(env, approximator, iterations=1000, value_norm=20000)
-        best_action = mcts_solver.search()
-
-        # legal_moves = [action for action in range(env.action_space.n) if env.is_move_legal(action)]
-        # best_action = select_action(env, approximator, legal_moves, prev_score)
-        # print("MCTS selected action:", best_action, "with visit distribution:", visit_distribution)
+        # Select the best action based on the visit distribution of the root's children
+        best_action, visit_distribution = td_mcts.best_action_distribution(root)
+        print("MCTS selected action:", best_action, "with visit distribution:", visit_distribution)
         state, prev_score, done, _ = env.step(best_action)
         print("Action taken:", best_action, " | Score:", env.score)
         print("Current board state:\n", env.board)
