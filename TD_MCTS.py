@@ -41,9 +41,8 @@ def td_mcts_learning(env, approximator, start_eps, num_episodes=50000, alpha=0.1
         previous_score = 0
         done = False
         max_tile = np.max(state)
-        td_mcts = TD_MCTS(env, approximator, iterations=50)
-
         while not done:
+            td_mcts = TD_MCTS(env, approximator, iterations=2000)
             legal_moves = [a for a in range(4) if env.is_move_legal(a)]
             if not legal_moves:
                 break
@@ -105,7 +104,9 @@ def td_mcts_learning(env, approximator, start_eps, num_episodes=50000, alpha=0.1
 
     if not os.path.exists('model/'):
         os.makedirs('model/')
-    with open(f"model/value_after_state_approximator_{start_eps+num_episodes}.pkl", 'wb') as f:
+    # with open(f"model/value_after_state_approximator_{start_eps+num_episodes}.pkl", 'wb') as f:
+    #     pickle.dump(approximator, f)
+    with open(f"model/value_approximator_tdmcts_{start_eps+num_episodes}.pkl", 'wb') as f:
         pickle.dump(approximator, f)
 
     return final_scores
@@ -117,7 +118,7 @@ def plot_scores(scores):
     plt.xlabel('Episode')
     plt.ylabel('Score')
     plt.title('Training Progress')
-    plt.show()
+    plt.savefig('training_progress.png')
 
 def main():
     # patterns = [[(0,0), (0,1), (0,2), (0,3), (1,0), (1,1)],
@@ -125,10 +126,19 @@ def main():
     #             [(2,0), (2,1), (2,2), (2,3), (3,0), (3,1)],
     #             [(0,0), (0,1), (0,2), (1,0), (1,1), (1,2)],
     #             [(1,0), (1,1), (1,2), (2,0), (2,1), (2,2)]] 
-    patterns = [[(1,0), (2,0), (3,0), (1,1), (2,1), (3,1)],
-                [(1,1), (2,1), (3,1), (1,2), (2,2), (3,2)],
-                [(0,0), (1,0), (2,0), (3,0), (2,1), (3,1)],
-                [(1,0), (1,1), (1,2), (1,3), (2,2), (3,2)]]
+    # patterns = [[(1,0), (2,0), (3,0), (1,1), (2,1), (3,1)],
+    #             [(1,1), (2,1), (3,1), (1,2), (2,2), (3,2)],
+    #             [(0,0), (1,0), (2,0), (3,0), (2,1), (3,1)],
+    #             [(1,0), (1,1), (1,2), (1,3), (2,2), (3,2)]]
+
+    patterns = [[(0,0), (0,1), (1,0), (1,1), (2,0), (2,1)],
+                [(0,0), (0,1), (1,1), (1,2), (1,3), (2,2)],
+                [(0,0), (1,0), (2,0), (2,1), (3,0), (3,1)],
+                [(0,1), (1,1), (2,1), (2,2), (3,1), (3,2)],
+                [(0,0), (0,1), (0,2), (1,1), (2,1), (2,2)],
+                [(0,0), (0,1), (1,1), (2,1), (3,1), (3,2)],
+                [(0,0), (0,1), (1,1), (2,0), (2,1), (3,1)],
+                [(0,0), (1,0), (0,1), (0,2), (1,2), (2,2)]]
 
     # patterns = [[(0, 0), (0, 1), (0, 2), (0, 3)],
     #             [(1, 0), (1, 1), (1, 2), (1, 3)],
@@ -154,10 +164,14 @@ def main():
     #             ]
 
     approximator = NTupleApproximator(4, patterns)
-    start_eps = 85_000
-    if os.path.exists(f"model/value_after_state_approximator_{start_eps}.pkl"):
+    start_eps = 0
+    # if os.path.exists(f"model/value_after_state_approximator_{start_eps}.pkl"):
+    #     print("Loading existing model...")
+    #     with open(f"model/value_after_state_approximator_{start_eps}.pkl", 'rb') as f:
+    #         approximator = pickle.load(f)
+    if os.path.exists(f"model/value_approximator_tdmcts_{start_eps}.pkl"):
         print("Loading existing model...")
-        with open(f"model/value_after_state_approximator_{start_eps}.pkl", 'rb') as f:
+        with open(f"model/value_state_approximator_tdmcts_{start_eps}.pkl", 'rb') as f:
             approximator = pickle.load(f)
 
     env = Game2048Env()

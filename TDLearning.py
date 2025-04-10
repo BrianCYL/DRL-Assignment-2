@@ -12,8 +12,8 @@ def select_action(env, approximator, legal_moves, prev_score):
     max_value = -float("inf")
     for action in legal_moves:
         sim_env = copy.deepcopy(env)
-        next_state, score, done, _, after_state = sim_env.step(action)
-        value = (score - prev_score) + approximator.value(after_state)
+        next_state, score, done, _ = sim_env.step(action)
+        value = (score - prev_score) + approximator.value(sim_env.after_state)
         if value > max_value:
             max_value = value
             best_action = action
@@ -42,34 +42,56 @@ def td_learning(env, approximator, start_eps, num_episodes=50000, alpha=0.1, gam
         max_tile = np.max(state)
 
         while not done:
-            legal_moves = [a for a in range(4) if env.is_move_legal(a)]
-            if not legal_moves:
-                break
-            # TODO: action selection
-            # Note: TD learning works fine on 2048 without explicit exploration, but you can still try some exploration methods.
-            best_action = select_action(env, approximator, legal_moves, previous_score)
-            state_copy = copy.deepcopy(state)
-            next_state, new_score, done, _, after_state = env.step(best_action)
-            incremental_reward = new_score - previous_score
-            previous_score = new_score
-            max_tile = max(max_tile, np.max(next_state))
+            # legal_moves = [a for a in range(4) if env.is_move_legal(a)]
+            # if not legal_moves:
+            #     break
+            # # TODO: action selection
+            # # Note: TD learning works fine on 2048 without explicit exploration, but you can still try some exploration methods.
+            # best_action = select_action(env, approximator, legal_moves, previous_score)
+            # state_copy = copy.deepcopy(state)
+            # next_state, new_score, done, _ = env.step(best_action)
+            # incremental_reward = new_score - previous_score
+            # previous_score = new_score
+            # max_tile = max(max_tile, np.max(next_state))
 
-            # TODO: Store trajectory or just update depending on the implementation
-            if done:
-                after_state = None
-                incremental_reward = 0
-            trajectory.append((copy.deepcopy(state_copy), best_action, incremental_reward, copy.deepcopy(after_state)))           
+            # # TODO: Store trajectory or just update depending on the implementation
+            # if done:
+            #     after_state = None
+            #     incremental_reward = 0
+            # trajectory.append((copy.deepcopy(state_copy), best_action, incremental_reward, copy.deepcopy(after_state)))           
 
-            state = after_state
+            # state = after_state
+            state = env.reset()
+            after_state = copy.deepcopy(state)
+            trajectory = []  # Store trajectory data if needed
+            previous_score = 0
+            done = False
+            max_tile = np.max(state)
+            while not done:
+                legal_moves = [a for a in range(4) if env.is_move_legal(a)]
+                if not legal_moves:
+                    break
+                # TODO: action selection
+                # Note: TD learning works fine on 2048 without explicit exploration, but you can still try some exploration methods.
 
-        # TODO: If you are storing the trajectory, consider updating it now depending on your implementation.
-        # for s, a, r, ns in trajectory:
-        #     if not ns is None:
-        #         delta = r + gamma * approximator.value(ns) - approximator.value(s)
-        #         approximator.update(s, delta, alpha)
-        #     else:
-        #         delta = - approximator.value(s)
-        #         approximator.update(s, delta, alpha)
+                best_action = select_action(env, approximator, legal_moves, previous_score)
+                if hasattr(env, 'after_state'):
+                    after_state = copy.deepcopy(env.after_state)
+                else:
+                    print("No after_state attribute found in env.")
+                next_state, new_score, done, _ = env.step(best_action)
+                next_after_state = copy.deepcopy(env.after_state)
+                incremental_reward = new_score - previous_score
+                previous_score = new_score
+                max_tile = max(max_tile, np.max(next_state))
+
+                # TODO: Store trajectory or just update depending on the implementation
+                if done:
+                    next_after_state = None
+                    incremental_reward = 0
+                trajectory.append((copy.deepcopy(after_state), best_action, incremental_reward, copy.deepcopy(next_after_state)))           
+
+                state = next_state
 
         for t in range(len(trajectory)):
             G = 0.0
@@ -102,7 +124,7 @@ def td_learning(env, approximator, start_eps, num_episodes=50000, alpha=0.1, gam
 
     if not os.path.exists('model/'):
         os.makedirs('model/')
-    with open(f"model/value_4tuple_approximator_{start_eps+num_episodes}.pkl", 'wb') as f:
+    with open(f"model/value_6tuple_approximator_{start_eps+num_episodes}.pkl", 'wb') as f:
         pickle.dump(approximator, f)
 
     return final_scores
@@ -126,6 +148,15 @@ def main():
     #             [(1,1), (2,1), (3,1), (1,2), (2,2), (3,2)],
     #             [(0,0), (1,0), (2,0), (3,0), (2,1), (3,1)],
     #             [(1,0), (1,1), (1,2), (1,3), (2,2), (3,2)]]
+
+    patterns = [[(0,0), (0,1), (1,0), (1,1), (2,0), (2,1)],
+                [(0,0), (0,1), (1,1), (1,2), (1,3), (2,2)],
+                [(0,0), (1,0), (2,0), (2,1), (3,0), (3,1)],
+                [(0,1), (1,1), (2,1), (2,2), (3,1), (3,2)],
+                [(0,0), (0,1), (0,2), (1,1), (2,1), (2,2)],
+                [(0,0), (0,1), (1,1), (2,1), (3,1), (3,2)],
+                [(0,0), (0,1), (1,1), (2,0), (2,1), (3,1)],
+                [(0,0), (1,0), (0,1), (0,2), (1,2), (2,2)]]
 
     # patterns = [[(0, 0), (0, 1), (0, 2), (0, 3)],
     #             [(1, 0), (1, 1), (1, 2), (1, 3)],
@@ -152,9 +183,9 @@ def main():
 
     approximator = NTupleApproximator(4, patterns)
     start_eps = 10_000
-    if os.path.exists(f"model/value_4tuple_approximator_{start_eps}.pkl"):
+    if os.path.exists(f"model/value_6tuple_approximator_{start_eps}.pkl"):
         print("Loading existing model...")
-        with open(f"model/value_4tuple_approximator_{start_eps}.pkl", 'rb') as f:
+        with open(f"model/value_6tuple_approximator_{start_eps}.pkl", 'rb') as f:
             approximator = pickle.load(f)
 
     env = Game2048Env()
