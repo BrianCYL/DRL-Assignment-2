@@ -249,16 +249,16 @@ def select_action(env, approximator, legal_moves, prev_score):
             best_action = action
     return best_action
 
-patterns = [[(1,0), (2,0), (3,0), (1,1), (2,1), (3,1)],
-            [(1,1), (2,1), (3,1), (1,2), (2,2), (3,2)],
-            [(0,0), (1,0), (2,0), (3,0), (2,1), (3,1)],
-            [(1,0), (1,1), (1,2), (1,3), (2,2), (3,2)]]
+# patterns = [[(1,0), (2,0), (3,0), (1,1), (2,1), (3,1)],
+#             [(1,1), (2,1), (3,1), (1,2), (2,2), (3,2)],
+#             [(0,0), (1,0), (2,0), (3,0), (2,1), (3,1)],
+#             [(1,0), (1,1), (1,2), (1,3), (2,2), (3,2)]]
 
-global approximator
+# global approximator
 
-approximator = NTupleApproximator(4, patterns)
-with open("value_approximator.pkl", "rb") as f:
-    approximator = pickle.load(f)
+# approximator = NTupleApproximator(4, patterns)
+# with open("value_approximator.pkl", "rb") as f:
+#     approximator = pickle.load(f)
 
 def get_action(state, score):
 
@@ -269,8 +269,8 @@ def get_action(state, score):
     legal_moves = [a for a in range(4) if env.is_move_legal(a)]
     if not legal_moves: return random.choice([0, 1, 2, 3])
     
-    td_mcts = TD_MCTS(env, approximator, iterations=3000, exploration_constant=np.sqrt(10))
-    root = DecisionNode(env, copy.deepcopy(state), env.score)
+    td_mcts = TD_MCTS(env, approximator, iterations=1000, exploration_constant=np.sqrt(200))
+    root = DecisionNode(copy.deepcopy(env), copy.deepcopy(state), env.score)
 
     # Run multiple simulations to construct and refine the search tree
     for _ in range(td_mcts.iterations):
@@ -290,31 +290,33 @@ def main():
     with open("../model/value_after_state_approximator_85000.pkl", "rb") as f:
         print("Loading value approximator from file...")
         approximator = pickle.load(f)
-    # print(approximator.symmetry_patterns)
-    print("Starting game...")
-    env = Game2048Env()
-    
-    # td_mcts = TD_MCTS(env, approximator, rollout_depth=3, iterations=100)
-    steps = 0
-    state = env.reset()
-    done = False
-    while not done:
-        td_mcts = TD_MCTS(copy.deepcopy(env), approximator, iterations=2000, exploration_constant=np.sqrt(10))
-        root = DecisionNode(copy.deepcopy(env), copy.deepcopy(state), env.score)
-        
-        # Run multiple simulations to construct and refine the search tree
-        for _ in range(td_mcts.iterations):
-            td_mcts.run_simulation(root)
 
-        # Select the best action based on the visit distribution of the root's children
-        best_action, visit_distribution = td_mcts.best_action_distribution(root)
-        print("MCTS selected action:", best_action, "with visit distribution:", visit_distribution)
-        state, prev_score, done, _ = env.step(best_action)
-        print("Action taken:", best_action, " | Score:", env.score)
-        print("Current board state:\n", env.board)
-        steps += 1
+    total_score = []
+    for _ in range(10):
+        print("Starting game...")
+        env = Game2048Env()
         
-    print("Game Over! Final Score:", env.score, "Stop at step:", steps)
+        steps = 0
+        state = env.reset()
+        done = False
+        while not done:
+            td_mcts = TD_MCTS(copy.deepcopy(env), approximator, iterations=2000, exploration_constant=np.sqrt(200))
+            root = DecisionNode(copy.deepcopy(env), copy.deepcopy(state), env.score)
+            
+            # Run multiple simulations to construct and refine the search tree
+            for _ in range(td_mcts.iterations):
+                td_mcts.run_simulation(root)
 
+            # Select the best action based on the visit distribution of the root's children
+            best_action, visit_distribution = td_mcts.best_action_distribution(root)
+            print("MCTS selected action:", best_action, "with visit distribution:", visit_distribution)
+            state, prev_score, done, _ = env.step(best_action)
+            print("Action taken:", best_action, " | Score:", env.score)
+            print("Current board state:\n", env.board)
+            steps += 1
+            
+        print("Game Over! Final Score:", env.score, "Stop at step:", steps)
+        total_score.append(env.score)
+    print("Average score over 10 games:", np.mean(total_score))
 if __name__ == "__main__":
     main()
