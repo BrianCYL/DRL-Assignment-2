@@ -249,16 +249,16 @@ def select_action(env, approximator, legal_moves, prev_score):
             best_action = action
     return best_action
 
-# patterns = [[(1,0), (2,0), (3,0), (1,1), (2,1), (3,1)],
-#             [(1,1), (2,1), (3,1), (1,2), (2,2), (3,2)],
-#             [(0,0), (1,0), (2,0), (3,0), (2,1), (3,1)],
-#             [(1,0), (1,1), (1,2), (1,3), (2,2), (3,2)]]
+patterns = [[(1,0), (2,0), (3,0), (1,1), (2,1), (3,1)],
+            [(1,1), (2,1), (3,1), (1,2), (2,2), (3,2)],
+            [(0,0), (1,0), (2,0), (3,0), (2,1), (3,1)],
+            [(1,0), (1,1), (1,2), (1,3), (2,2), (3,2)]]
 
-# global approximator
+global approximator
 
-# approximator = NTupleApproximator(4, patterns)
-# with open("value_approximator.pkl", "rb") as f:
-#     approximator = pickle.load(f)
+approximator = NTupleApproximator(4, patterns)
+with open("value_approximator.pkl", "rb") as f:
+    approximator = pickle.load(f)
 
 def get_action(state, score):
 
