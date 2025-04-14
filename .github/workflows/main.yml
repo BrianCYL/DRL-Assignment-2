@@ -33,7 +33,7 @@ jobs:
 
     - name: 4. Download the model
       run: |
-        gdown https://drive.google.com/uc?id=179ALA_pQ_6Th7nYwKoFkFH61-vrVeP-q -O value_approximator.pkl
+        gdown https://drive.google.com/uc?id=1JUVbq3AVpUAlQD45Hht2aKq_wRV3wEVL -O value_approximator.pkl
 
     - name: 5. Run Evaluation
       run: 
