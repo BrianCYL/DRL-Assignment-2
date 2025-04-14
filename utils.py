@@ -18,10 +18,28 @@ class NTupleApproximator:
         # Generate symmetrical transformations for each pattern
         # self.symmetry_patterns = patterns
         self.symmetry_patterns = []
-        for pattern in self.patterns:
+        self.pattern_idx = []
+        for idx, pattern in enumerate(self.patterns):
             syms = self.generate_symmetries(pattern)
             for sym_ in syms:
                 self.symmetry_patterns.append(sym_)
+                self.pattern_idx.append(idx)
+    
+    def generate_symmetries2(self, pattern):
+        # TODO: Generate 8 symmetrical transformations of the given pattern.
+        def rotate90(coords, size=4):
+            return [(y, size - 1 - x) for x, y in coords]
+
+        def flip_horizontal(coords, size=4):
+            return [(x, size - 1 - y) for x, y in coords]
+        
+        syms = []
+        current = pattern
+        for _ in range(4):
+            syms.append(current)
+            syms.append(flip_horizontal(current))
+            current = rotate90(current)
+        return syms
 
     def generate_symmetries(self, pattern):
         # TODO: Generate 8 symmetrical transformations of the given pattern.
@@ -51,18 +69,18 @@ class NTupleApproximator:
     def value(self, board):
         # TODO: Estimate the board value: sum the evaluations from all patterns.
         pattern_val = 0.0
-        for i, patterns in enumerate(self.symmetry_patterns):
+        for idx, patterns in zip(self.pattern_idx, self.symmetry_patterns):
             tile_to_index = tuple(self.tile_to_index(tile) for tile in self.get_feature(board, patterns))
-            pattern_val += self.weights[i//8][tile_to_index]
+            pattern_val += self.weights[idx][tile_to_index]
             # pattern_val += self.weights[i][tile_to_index]
         return pattern_val
     
     def update(self, board, delta, alpha):
         # TODO: Update weights based on the TD error.
-        update_val = alpha * delta / len(self.symmetry_patterns)
-        for i, pattern in enumerate(self.symmetry_patterns):
-            tile_to_index = tuple(self.tile_to_index(tile) for tile in self.get_feature(board, pattern))
-            self.weights[i//8][tile_to_index] += update_val
+        update_val = alpha * delta
+        for idx, patterns in zip(self.pattern_idx, self.symmetry_patterns):
+            tile_to_index = tuple(self.tile_to_index(tile) for tile in self.get_feature(board, patterns))
+            self.weights[idx][tile_to_index] += update_val
             # self.weights[i][tile_to_index] += update_val
 
 class DecisionNode:

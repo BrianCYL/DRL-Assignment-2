@@ -238,10 +238,11 @@ class Game2048Env(gym.Env):
         # If the simulated board is different from the current board, the move is legal
         return not np.array_equal(self.board, temp_board)
 
-def select_action(env, approximator, legal_moves, prev_score):
+def select_action(env, approximator, legal_moves):
     max_value = -float("inf")
     for action in legal_moves:
         sim_env = copy.deepcopy(env)
+        prev_score = sim_env.score
         next_state, score, done, _, after_state = sim_env.step(action)
         value = (score - prev_score) + approximator.value(after_state)
         if value > max_value:
@@ -249,10 +250,14 @@ def select_action(env, approximator, legal_moves, prev_score):
             best_action = action
     return best_action
 
-patterns = [[(1,0), (2,0), (3,0), (1,1), (2,1), (3,1)],
-            [(1,1), (2,1), (3,1), (1,2), (2,2), (3,2)],
+patterns = [[(0,0), (1,0), (2,0), (0,1), (1,1), (2,1)],
+            [(0,1), (1,1), (2,1), (0,2), (1,2), (2,2)],
             [(0,0), (1,0), (2,0), (3,0), (2,1), (3,1)],
-            [(1,0), (1,1), (1,2), (1,3), (2,2), (3,2)]]
+            [(0,1), (1,1), (2,1), (3,1), (2,2), (3,2)],
+            [(0,0), (1,0), (2,0), (3,0), (1,1), (2,1)],
+            [(0,1), (1,1), (2,1), (3,1), (1,2), (2,2)],
+            [(0,0), (1,0), (2,0), (3,0), (3,1), (3,2)],
+            [(0,0), (1,0), (2,0), (3,0), (2,1), (2,2)]]   
 
 global approximator
 
@@ -280,14 +285,23 @@ def get_action(state, score):
     return best_action
 
 def main():
-    patterns = [[(1,0), (2,0), (3,0), (1,1), (2,1), (3,1)],
-                [(1,1), (2,1), (3,1), (1,2), (2,2), (3,2)],
+    # patterns = [[(1,0), (2,0), (3,0), (1,1), (2,1), (3,1)],
+    #             [(1,1), (2,1), (3,1), (1,2), (2,2), (3,2)],
+    #             [(0,0), (1,0), (2,0), (3,0), (2,1), (3,1)],
+    #             [(1,0), (1,1), (1,2), (1,3), (2,2), (3,2)]]
+    patterns = [
+                [(0,0), (1,0), (2,0), (0,1), (1,1), (2,1)],
+                [(0,1), (1,1), (2,1), (0,2), (1,2), (2,2)],
                 [(0,0), (1,0), (2,0), (3,0), (2,1), (3,1)],
-                [(1,0), (1,1), (1,2), (1,3), (2,2), (3,2)]]
-
+                [(0,1), (1,1), (2,1), (3,1), (2,2), (3,2)],
+                [(0,0), (1,0), (2,0), (3,0), (1,1), (2,1)],
+                [(0,1), (1,1), (2,1), (3,1), (1,2), (2,2)],
+                [(0,0), (1,0), (2,0), (3,0), (3,1), (3,2)],
+                [(0,0), (1,0), (2,0), (3,0), (2,1), (2,2)],
+            ]   
     approximator = NTupleApproximator(4, patterns)
 
-    with open("../model/value_after_state_approximator_85000.pkl", "rb") as f:
+    with open("./model/value_revised_approximator_10000.pkl", "rb") as f:
         print("Loading value approximator from file...")
         approximator = pickle.load(f)
 
@@ -300,7 +314,7 @@ def main():
         state = env.reset()
         done = False
         while not done:
-            td_mcts = TD_MCTS(copy.deepcopy(env), approximator, iterations=2000, exploration_constant=np.sqrt(200))
+            td_mcts = TD_MCTS(copy.deepcopy(env), approximator, iterations=2000, exploration_constant=np.sqrt(0))
             root = DecisionNode(copy.deepcopy(env), copy.deepcopy(state), env.score)
             
             # Run multiple simulations to construct and refine the search tree
