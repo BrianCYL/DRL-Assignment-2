@@ -24,22 +24,6 @@ class NTupleApproximator:
             for sym_ in syms:
                 self.symmetry_patterns.append(sym_)
                 self.pattern_idx.append(idx)
-    
-    def generate_symmetries2(self, pattern):
-        # TODO: Generate 8 symmetrical transformations of the given pattern.
-        def rotate90(coords, size=4):
-            return [(y, size - 1 - x) for x, y in coords]
-
-        def flip_horizontal(coords, size=4):
-            return [(x, size - 1 - y) for x, y in coords]
-        
-        syms = []
-        current = pattern
-        for _ in range(4):
-            syms.append(current)
-            syms.append(flip_horizontal(current))
-            current = rotate90(current)
-        return syms
 
     def generate_symmetries(self, pattern):
         # TODO: Generate 8 symmetrical transformations of the given pattern.
@@ -200,10 +184,10 @@ class TD_MCTS:
             if (isinstance(node, DecisionNode) and (node.is_terminal or not node.children)) or (isinstance(node, ChanceNode) and not node.children):
                 break
 
-        value = self.evaluate_leaf(node, cumulative_reward)
+        value = self.evaluate(node, cumulative_reward)
         self.backpropagate(path, value)
 
-    def evaluate_leaf(self, node, cumulative_reward):
+    def evaluate(self, node, cumulative_reward):
         if isinstance(node, DecisionNode):
             if not node.children and not node.is_terminal:
                 self.expand_decision_node(node)

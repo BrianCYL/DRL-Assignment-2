@@ -250,25 +250,28 @@ def select_action(env, approximator, legal_moves):
             best_action = action
     return best_action
 
-patterns = [[(0,0), (1,0), (2,0), (0,1), (1,1), (2,1)],
-            [(0,1), (1,1), (2,1), (0,2), (1,2), (2,2)],
-            [(0,0), (1,0), (2,0), (3,0), (2,1), (3,1)],
-            [(0,1), (1,1), (2,1), (3,1), (2,2), (3,2)],
-            [(0,0), (1,0), (2,0), (3,0), (1,1), (2,1)],
-            [(0,1), (1,1), (2,1), (3,1), (1,2), (2,2)],
-            [(0,0), (1,0), (2,0), (3,0), (3,1), (3,2)],
-            [(0,0), (1,0), (2,0), (3,0), (2,1), (2,2)]]   
+def init_model():
+    patterns = [[(0,0), (1,0), (2,0), (0,1), (1,1), (2,1)],
+                [(0,1), (1,1), (2,1), (0,2), (1,2), (2,2)],
+                [(0,0), (1,0), (2,0), (3,0), (2,1), (3,1)],
+                [(0,1), (1,1), (2,1), (3,1), (2,2), (3,2)],
+                [(0,0), (1,0), (2,0), (3,0), (1,1), (2,1)],
+                [(0,1), (1,1), (2,1), (3,1), (1,2), (2,2)],
+                [(0,0), (1,0), (2,0), (3,0), (3,1), (3,2)],
+                [(0,0), (1,0), (2,0), (3,0), (2,1), (2,2)]]   
+    global approximator
+    if approximator is None:
+        gc.collect()
+        approximator = NTupleApproximator(4, patterns)
+        with open("value_approximator.pkl", "rb") as f:
+            approximator = pickle.load(f)
 
-global approximator
-
-approximator = NTupleApproximator(4, patterns)
-with open("value_approximator.pkl", "rb") as f:
-    approximator = pickle.load(f)
+init_model()
 
 def get_action(state, score):
 
     env = Game2048Env()
-    env.board = copy.deepcopy(state)
+    env.board = state.copy()
     env.score = score
 
     legal_moves = [a for a in range(4) if env.is_move_legal(a)]
