@@ -314,8 +314,8 @@ def main():
         state = env.reset()
         done = False
         while not done:
-            td_mcts = TD_MCTS(copy.deepcopy(env), approximator, iterations=2000, exploration_constant=np.sqrt(200))
-            root = DecisionNode(copy.deepcopy(env), copy.deepcopy(state), env.score)
+            td_mcts = TD_MCTS(copy.deepcopy(env), approximator, iterations=2000, exploration_constant=np.sqrt(0))
+            root = DecisionNode(env)
             
             # Run multiple simulations to construct and refine the search tree
             for _ in range(td_mcts.iterations):
