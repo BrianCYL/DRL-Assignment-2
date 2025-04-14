@@ -250,6 +250,7 @@ def select_action(env, approximator, legal_moves):
             best_action = action
     return best_action
 
+approximator = None
 def init_model():
     patterns = [[(0,0), (1,0), (2,0), (0,1), (1,1), (2,1)],
                 [(0,1), (1,1), (2,1), (0,2), (1,2), (2,2)],
