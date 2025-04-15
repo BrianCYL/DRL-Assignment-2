@@ -278,7 +278,7 @@ def get_action(state, score):
     legal_moves = [a for a in range(4) if env.is_move_legal(a)]
     if not legal_moves: return random.choice([0, 1, 2, 3])
     
-    td_mcts = TD_MCTS(env, approximator, iterations=1500, exploration_constant=0.0)
+    td_mcts = TD_MCTS(copy.deepcopy(env), approximator, iterations=1500, exploration_constant=0.0)
     root = DecisionNode(env)
 
     # Run multiple simulations to construct and refine the search tree
