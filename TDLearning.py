@@ -101,6 +101,7 @@ def td_learning(env, approximator, start_eps, num_episodes=50000, alpha=0.1, gam
             success_rate = np.sum(success_flags[-100:]) / 100
             print(f"Episode {episode+1}/{num_episodes} | Avg Score: {avg_score:.2f} | Success Rate: {success_rate:.2f}")
 
+        if (episode + 1) % 1000 == 0:
             if not os.path.exists('model/'):
                 os.makedirs('model/')
             with open(f"model/value_revised_approximator_{start_eps+episode+1}.pkl", 'wb') as f:
@@ -163,7 +164,7 @@ def main():
     #             ]
 
     approximator = NTupleApproximator(4, patterns)
-    start_eps = 10_000
+    start_eps = 20_000
     if os.path.exists(f"model/value_revised_approximator_{start_eps}.pkl"):
         print("Loading existing model...")
         with open(f"model/value_revised_approximator_{start_eps}.pkl", 'rb') as f:

@@ -250,6 +250,7 @@ def select_action(env, approximator, legal_moves):
             best_action = action
     return best_action
 
+
 approximator = None
 def init_model():
     patterns = [[(0,0), (1,0), (2,0), (0,1), (1,1), (2,1)],
@@ -267,18 +268,19 @@ def init_model():
         with open("value_approximator.pkl", "rb") as f:
             approximator = pickle.load(f)
 
+env = Game2048Env()
 init_model()
-
+td_mcts = TD_MCTS(env, approximator, iterations=1500, exploration_constant=0.0)
 def get_action(state, score):
 
-    env = Game2048Env()
-    env.board = state.copy()
+    # env = Game2048Env()
+    env.board = copy.deepcopy(state)
     env.score = score
 
-    legal_moves = [a for a in range(4) if env.is_move_legal(a)]
-    if not legal_moves: return random.choice([0, 1, 2, 3])
+    # legal_moves = [a for a in range(4) if env.is_move_legal(a)]
+    # if not legal_moves: return random.choice([0, 1, 2, 3])
     
-    td_mcts = TD_MCTS(copy.deepcopy(env), approximator, iterations=1500, exploration_constant=0.0)
+    
     root = DecisionNode(env)
 
     # Run multiple simulations to construct and refine the search tree
@@ -305,7 +307,7 @@ def main():
             ]   
     approximator = NTupleApproximator(4, patterns)
 
-    with open("./model/value_revised_approximator_10000.pkl", "rb") as f:
+    with open("./model/value_revised_approximator_20000.pkl", "rb") as f:
         print("Loading value approximator from file...")
         approximator = pickle.load(f)
 
@@ -317,8 +319,8 @@ def main():
         steps = 0
         state = env.reset()
         done = False
+        td_mcts = TD_MCTS(env, approximator, iterations=1500, exploration_constant=np.sqrt(0))
         while not done:
-            td_mcts = TD_MCTS(copy.deepcopy(env), approximator, iterations=2000, exploration_constant=np.sqrt(0))
             root = DecisionNode(env)
             
             # Run multiple simulations to construct and refine the search tree
@@ -327,10 +329,10 @@ def main():
 
             # Select the best action based on the visit distribution of the root's children
             best_action, visit_distribution = td_mcts.best_action_distribution(root)
-            print("MCTS selected action:", best_action, "with visit distribution:", visit_distribution)
+            # print("MCTS selected action:", best_action, "with visit distribution:", visit_distribution)
             state, prev_score, done, _ = env.step(best_action)
-            print("Action taken:", best_action, " | Score:", env.score)
-            print("Current board state:\n", env.board)
+            # print("Action taken:", best_action, " | Score:", env.score)
+            # print("Current board state:\n", env.board)
             steps += 1
             
         print("Game Over! Final Score:", env.score, "Stop at step:", steps)
