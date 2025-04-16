@@ -18,7 +18,7 @@ def load_weights(filename):
     return weights
 
 def main():
-    file_name = "./model/value_revised_approximator_20000.pkl"
+    file_name = "./model/value_revised_approximator_43000.pkl"
     # Assume: self.weights = [defaultdict(float), defaultdict(float), ...]
     # Convert to list of dicts
     # Load the approximator
@@ -30,7 +30,7 @@ def main():
            if isinstance(v, np.float64):
                w[k] = float(v)
     
-    with open("value_revised_approximator_20000.pkl", 'wb') as f:
+    with open("value_revised_approximator_43000.pkl", 'wb') as f:
         pickle.dump(approximator, f)
 
 
